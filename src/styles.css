@@ -4029,3 +4029,19 @@ select {
 .proof-actions svg {
   flex-shrink: 0;
 }
+
+/* Quick product entry keeps custom weights and sacks one tap away. */
+.product-card { cursor: pointer; }
+.product-quantity-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f6f8f2;
+  color: #4e7143;
+  font: inherit;
+  font-size: 12px;
+}
+.product-quantity-button:hover { background: #eaf0e3; }
+.product-quantity-button:disabled { cursor: not-allowed; opacity: .5; }

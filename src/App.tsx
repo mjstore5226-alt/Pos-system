@@ -227,6 +227,10 @@ export default function App() {
     });
     return true;
   }
+  function quickAdd(p: Product) {
+    if (p.stockKg < 1) return;
+    if (addItem(p, "kg", 1)) notify(`${p.name} · 1 kg added to cart.`);
+  }
   function changeQuantity(index: number, delta: number) {
     const item = cart[index];
     if (delta > 0)
@@ -492,8 +496,8 @@ export default function App() {
                     <strong>By the kilo. By the sack.</strong>
                     <p>
                       {mode === "retail"
-                        ? "Fresh picks and fair prices. A grain for every table."
-                        : "More for your business. Wholesale prices are now applied."}
+                        ? "Tap a product to add 1 kg. Use Qty / sack for other amounts."
+                        : "Tap to add 1 kg at wholesale price. Use Qty / sack for other amounts."}
                     </p>
                   </div>
                   <span className="banner-tag">
@@ -610,12 +614,16 @@ export default function App() {
                 ) : (
                   <div className="product-grid">
                     {filtered.map((p) => (
-                      <article className="product-card" key={p.id}>
+                      <article
+                        className="product-card"
+                        key={p.id}
+                        onClick={() => quickAdd(p)}
+                      >
                         <button
                           className="product-image"
                           style={{ background: `${p.color}12` }}
-                          onClick={() => setSelected(p)}
-                          aria-label={`Choose ${p.name}`}
+                          disabled={p.stockKg < 1}
+                          aria-label={`Add 1 kg of ${p.name} to cart`}
                         >
                           <span className="product-category">{p.category}</span>
                           {p.popular && (
@@ -651,13 +659,24 @@ export default function App() {
                               {weight(p.stockKg)} kg in stock
                             </span>
                             <button
-                              disabled={p.stockKg <= 0}
-                              onClick={() => setSelected(p)}
+                              disabled={p.stockKg < 1}
                               aria-label={`Add ${p.name}`}
                             >
                               <Plus size={17} />
                             </button>
                           </div>
+                          <button
+                            type="button"
+                            className="product-quantity-button"
+                            disabled={p.stockKg <= 0}
+                            aria-label={`Choose quantity or sacks for ${p.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelected(p);
+                            }}
+                          >
+                            Qty / sack
+                          </button>
                         </div>
                       </article>
                     ))}
@@ -1204,7 +1223,7 @@ export default function App() {
               <section>
                 <h3>Make a sale</h3>
                 <p>
-                  Choose retail or wholesale prices, select a rice variety, and
+                  Choose retail or wholesale prices. Tap a rice variety to add 1 kg, or use Qty / sack to
                   enter kilograms or whole sacks. You can mix both in an order.
                 </p>
               </section>
