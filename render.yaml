@@ -1,0 +1,32 @@
+# Deploy from this task branch. Requires a paid service with persistent disk.
+services:
+  - type: web
+    name: grain-pos
+    runtime: node
+    plan: starter
+    branch: coderabbit/enhance-rice-retail-wholesale-pos/548cdb80
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    disk:
+      name: pos-data
+      mountPath: /var/data/grain-pos
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.1
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATA_DIR
+        value: /var/data/grain-pos
+      - key: OFFLINE_MODE
+        value: "1"
+      - key: PUBLIC_DEPLOYMENT
+        value: "1"
+      - key: POS_USERNAME
+        value: cashier
+      - key: POS_PASSWORD
+        generateValue: true
