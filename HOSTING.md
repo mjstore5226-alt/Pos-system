@@ -20,4 +20,8 @@ The login uses the browser's built-in HTTP authentication dialog over the hostin
 
 USB devices attach to the browser device, so supported local USB controllers can still be used over HTTPS. A cloud server cannot directly reach your shop's private IP printer/drawer. Keep that hardware on the local runner unless a suitable private network connection is configured. Do not expose the printer directly to the internet.
 
-For another host, use `npm ci && npm run build`, then `npm start`, with Node 24, HTTPS, persistent `DATA_DIR`, `PUBLIC_DEPLOYMENT=1`, `POS_USERNAME` and a private `POS_PASSWORD`. Health endpoint `/api/health` is intentionally public; all application pages and APIs require authentication when the password is configured. Ordinary local startup without a password retains the existing trusted-LAN behavior.
+For another host, use `npm ci --include=dev && npm run build`, then `npm start`, with Node 24, HTTPS, persistent `DATA_DIR`, `PUBLIC_DEPLOYMENT=1`, `POS_USERNAME` and a private `POS_PASSWORD`. Health endpoint `/api/health` is intentionally public; all application pages and APIs require authentication when the password is configured. Ordinary local startup without a password retains the existing trusted-LAN behavior.
+
+## If deployment reports `tsc: command not found` or `vite: not found`
+
+Set the build command to `npm ci --include=dev && npm run build`, then redeploy. Production mode normally skips devDependencies, but TypeScript and Vite are needed during the build. The updated blueprint explicitly includes them. If the service was created manually, update its build command in the hosting dashboard too. Keep the start command as `npm start`.
