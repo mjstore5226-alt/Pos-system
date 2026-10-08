@@ -1,4 +1,4 @@
-import { CameraCapture } from "./camera";
+import { PaymentProof } from "./payment-proof";
 import { useEffect, useState, useRef, type FormEvent } from "react";
 import {
   Plus,
@@ -9,8 +9,6 @@ import {
   CheckCircle2,
   Cable,
   Settings2,
-  Camera,
-  ScanLine,
   Download,
 } from "lucide-react";
 import { api, money, newTransactionId } from "./types";
@@ -507,41 +505,15 @@ function CashEntryForm({
     return () => cancelAnimationFrame(frame);
   }, []);
   const [reference, setReference] = useState("");
-  const [camera, setCamera] = useState<"photo" | "barcode" | null>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [receipt, setReceipt] = useState("");
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
-  async function upload(file?: File) {
-    if (!file) return;
-    setError("");
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-      file.size > 5 * 1024 * 1024
-    ) {
-      setError("Choose a JPG, PNG, or WebP image up to 5 MB.");
-      return;
-    }
-    setReading(true);
-    try {
-      const data = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result));
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
-      setReceipt(data);
-    } catch {
-      setError("Could not read this picture.");
-    } finally {
-      setReading(false);
-    }
-  }
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (saveLock.current || busy || reading || camera || !reachable) return;
+    if (saveLock.current || busy || reading || !reachable) return;
     saveLock.current = true;
     setBusy(true);
     setError("");
@@ -574,7 +546,7 @@ function CashEntryForm({
       }}
     >
       <form onSubmit={save}>
-        <fieldset disabled={busy || reading} className="payment-fields">
+        <fieldset disabled={busy} className="payment-fields">
           <label className="form-group">
             Account
             <select
@@ -667,99 +639,14 @@ function CashEntryForm({
               ? "For e-wallet entries, select this only when physical cash is handled."
               : "Choose a USB controller or printer connection in Drawer settings to enable automatic opening."}
           </p>
-          <label className="form-group">
-            Payment reference / barcode
-            <input
-              className="form-input"
-              maxLength={250}
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.preventDefault();
-              }}
-              placeholder="Type or scan a transaction reference"
-            />
-          </label>
-          <div className="receipt-actions">
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => setCamera("photo")}
-            >
-              <Camera size={16} />
-              Capture proof
-            </button>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => setCamera("barcode")}
-            >
-              <ScanLine size={16} />
-              Scan barcode / QR
-            </button>
-          </div>
-          <p className="field-hint">
-            Scanning saves the code as a reference. It does not verify payment
-            or extract an amount. Confirm the transaction in your wallet
-            account.
-          </p>
-          {camera && (
-            <CameraCapture
-              mode={camera}
-              onClose={() => setCamera(null)}
-              onCapture={(value) => {
-                if (camera === "photo") setReceipt(value);
-                else if (value.length > 250) {
-                  setError(
-                    "Scanned code is too long. Enter the transaction reference manually (up to 250 characters).",
-                  );
-                  setCamera(null);
-                  return;
-                } else setReference(value);
-                setError("");
-                setCamera(null);
-              }}
-            />
-          )}
-          <label className="form-group">
-            Upload proof of payment (optional)
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                void upload(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          <label className="form-group">
-            Take proof photo
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              onChange={(e) => {
-                void upload(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          {receipt && (
-            <>
-              <img
-                className="cashbook-proof"
-                src={receipt}
-                alt="Payment proof preview"
-              />
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setReceipt("")}
-              >
-                Remove proof
-              </button>
-            </>
-          )}
+          <PaymentProof
+            photo={receipt}
+            reference={reference}
+            onPhoto={setReceipt}
+            onReference={setReference}
+            onBusyChange={setReading}
+            disabled={busy}
+          />
         </fieldset>
         {error && (
           <div className="error-box" role="alert">
@@ -777,7 +664,7 @@ function CashEntryForm({
           </button>
           <button
             className="primary-button"
-            disabled={busy || reading || !!camera || !reachable}
+            disabled={busy || reading || !reachable}
           >
             {busy
               ? "Saving…"

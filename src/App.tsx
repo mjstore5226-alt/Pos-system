@@ -1,3 +1,4 @@
+import { PaymentProof } from "./payment-proof";
 import { CameraCapture } from "./camera";
 import { useServerStatus, canDisplayPhoto } from "./connection";
 import {
@@ -1483,28 +1484,6 @@ function Checkout({
   const submitting = useRef(false);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
-  const [camera, setCamera] = useState<"photo" | "barcode" | null>(null);
-  const upload = useRef<HTMLInputElement>(null);
-  async function readReceipt(file?: File) {
-    if (!file) return;
-    if (
-      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-      file.size > 5 * 1024 * 1024
-    ) {
-      setError("Choose a JPG, PNG, or WebP image under 5 MB.");
-      return;
-    }
-    setReading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => setReading(false);
-    reader.onload = () => {
-      setPhoto(String(reader.result));
-      setError("");
-    };
-    reader.onerror = () =>
-      setError("Could not read this image. Please try again.");
-    reader.readAsDataURL(file);
-  }
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (submitting.current || busy || reading) return;
@@ -1567,7 +1546,6 @@ function Checkout({
                   setMethod(m);
                   setConfirmed(false);
                   setError("");
-                  setCamera(null);
                 }}
               >
                 <Icon size={21} />
@@ -1580,7 +1558,7 @@ function Checkout({
             );
           })}
         </div>
-        <fieldset disabled={busy || reading} className="payment-fields">
+        <fieldset disabled={busy} className="payment-fields">
           {method === "cash" && (
             <>
               <label className="field-label" htmlFor="tendered">
@@ -1657,35 +1635,6 @@ function Checkout({
               </label>
             </>
           )}
-          {method !== "ewallet" && (
-            <label className="form-group">
-              Upload proof of payment (optional)
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => {
-                  void readReceipt(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-              {photo && (
-                <>
-                  <img
-                    className="cashbook-proof"
-                    src={photo}
-                    alt="Payment proof preview"
-                  />
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => setPhoto("")}
-                  >
-                    Remove proof
-                  </button>
-                </>
-              )}
-            </label>
-          )}
           {method === "ewallet" && (
             <>
               <div className="info-box">
@@ -1695,89 +1644,6 @@ function Checkout({
                   the payment in your merchant account.
                 </span>
               </div>
-              <label className="field-label" htmlFor="reference">
-                Payment reference / barcode
-              </label>
-              <div className="input-with-icon">
-                <ScanLine size={18} />
-                <input
-                  id="reference"
-                  maxLength={250}
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="Type or scan the receipt reference"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.preventDefault();
-                  }}
-                />
-              </div>
-              <p className="field-hint">
-                A USB barcode scanner can enter the reference directly.
-              </p>
-              <div className="receipt-actions">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setCamera("photo")}
-                >
-                  <Camera size={16} />
-                  Take photo
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => upload.current?.click()}
-                >
-                  <Upload size={16} />
-                  Upload
-                </button>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => setCamera("barcode")}
-                >
-                  <ScanLine size={16} />
-                  Scan code
-                </button>
-              </div>
-              <input
-                ref={upload}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={(e) => {
-                  void readReceipt(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-              {camera && (
-                <CameraCapture
-                  mode={camera}
-                  onClose={() => setCamera(null)}
-                  onCapture={(value) => {
-                    if (camera === "photo") setPhoto(value);
-                    else setReference(value.slice(0, 250));
-                    setCamera(null);
-                  }}
-                />
-              )}
-              {photo && (
-                <div className="receipt-preview">
-                  <img src={photo} alt="Captured e-wallet payment receipt" />
-                  <span>
-                    <CircleCheck size={15} />
-                    Receipt attached
-                  </span>
-                  <button
-                    className="icon-button"
-                    type="button"
-                    onClick={() => setPhoto("")}
-                    aria-label="Remove receipt"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
               <label className="check-label">
                 <input
                   type="checkbox"
@@ -1788,6 +1654,14 @@ function Checkout({
               </label>
             </>
           )}
+          <PaymentProof
+            photo={photo}
+            reference={reference}
+            onPhoto={setPhoto}
+            onReference={setReference}
+            onBusyChange={setReading}
+            disabled={busy}
+          />
         </fieldset>
         {error && (
           <div className="error-box" role="alert">

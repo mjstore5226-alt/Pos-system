@@ -101,7 +101,7 @@ Products, uploaded pictures, sales and payment receipts are in **data/pos.sqlite
 
 ## GCash, Maya and other e-wallet history
 
-In Cash book → Money in / Money out, select **Cash**, **GCash**, **Maya** or **Other e-wallet** and enter a wallet name. Record money in/out, amount, reason and an optional payment reference. Use **Capture proof** for a camera photo, **Scan barcode / QR** for a reference, or upload a receipt. Camera access needs localhost or trusted HTTPS. A code/reference is a record, not confirmation of settlement; verify your wallet transaction separately.
+In Cash book → Money in / Money out, select **Cash**, **GCash**, **Maya** or **Other e-wallet** and enter a wallet name. Record money in/out, amount, reason and an optional payment reference. Use **Take photo** for a camera photo, **Scan barcode / QR** for a reference, or upload a receipt. Camera access needs localhost or trusted HTTPS. A code/reference is a record, not confirmation of settlement; verify your wallet transaction separately.
 
 History and pictures are saved in the PC database. Select an account/currency to see its all-time balance; filter saved history by dates, direction or reason/reference, open **View details**, or **Export history** to CSV. Export includes reference and attachment status; images stay in the database. Cash sales appear automatically; wallet movements, including wallet sales, are entered manually. For transfers, record an outflow from one account and an inflow to the other with the same reference. Existing cash history remains under Cash.
 
@@ -114,3 +114,14 @@ Open **Drawer settings**, choose a compatible **USB ESC/POS drawer controller** 
 Cash entries trigger the drawer only after the server confirms a successful save. Wallet entries keep it closed by default; check **Open drawer after this entry is saved** when you also handle physical cash. A failure leaves the entry saved and offers **Retry drawer only**, which does not create another entry. A trigger being sent does not confirm the drawer physically opened.
 
 Direct USB controls the device attached to the browser running the transaction. An Android phone cannot open a USB drawer attached to a different PC through this connection. Use a drawer attached to a network printer for shared PC/phone operation. Generic HID/serial, Bluetooth and proprietary USB triggers require model-specific support; this release sends the ESC/POS pin-2 drawer pulse.
+
+## Android proof of payment
+
+Checkout (cash, debit or e-wallet) and Cash book now share these controls:
+
+- **Take photo:** requests the Android rear camera through the phone's photo picker.
+- **Scan barcode / QR:** uses live scanning on HTTPS; on ordinary local HTTP it requests a code photo instead.
+- **Upload photo:** attaches an existing receipt/screenshot.
+- **Scan saved image:** reads a barcode/QR from a receipt photo or screenshot and attaches the photo too. This works without live-camera permissions and needs no internet while the local POS is reachable.
+
+If live camera access fails, use **Use phone camera instead** or **Scan saved image**. JPG/PNG/WebP photos up to 20 MB are resized before storage (up to 5 MB per saved proof). Review readability before saving. Scanned references are kept for all payment methods and can be reopened with the payment history. A code/photo does not confirm that the money was received. Actual Android camera app behavior depends on the phone/browser.

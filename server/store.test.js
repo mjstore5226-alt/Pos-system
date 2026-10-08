@@ -522,3 +522,38 @@ test("history summaries exclude proofs but indexed details retain them", (t) => 
     proofImage,
   );
 });
+
+test("scanned references and photos are retained for every payment method", (t) => {
+  const s = fresh(t);
+  for (const paymentMethod of ["cash", "debit", "ewallet"]) {
+    const reference = `ANDROID-${paymentMethod}-123`;
+    const input = sale({
+      paymentMethod,
+      reference,
+      receipt: proofImage,
+      cardLast4: "1234",
+      paymentConfirmed: true,
+    });
+    const order = s.checkout(input);
+    assert.equal(s.orderById(order.id).reference, reference);
+    assert.equal(s.orderById(order.id).receipt, proofImage);
+    assert.equal(s.checkout(input).id, order.id);
+    if (paymentMethod === "cash")
+      assert.equal(
+        s.cashEntries(true).find((e) => e.id === order.id).reference,
+        reference,
+      );
+    assert.throws(
+      () =>
+        s.checkout(
+          sale({
+            paymentMethod,
+            reference: "x".repeat(251),
+            cardLast4: "1234",
+            paymentConfirmed: true,
+          }),
+        ),
+      /reference/,
+    );
+  }
+});

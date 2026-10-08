@@ -416,6 +416,7 @@ export function createStore(path = ":memory:") {
         amount: o.total,
         currency: o.currency,
         note: `Cash sale ${o.number}`,
+        reference: o.reference || "",
         createdAt: o.createdAt,
         ...(summary ? { hasReceipt: o.hasReceipt } : { receipt: o.receipt }),
       }));
@@ -557,6 +558,11 @@ export function createStore(path = ":memory:") {
         input.cashTendered > 100000000)
     )
       throw new Error("Cash received must cover the total.");
+    if (
+      input.reference != null &&
+      (typeof input.reference !== "string" || input.reference.length > 250)
+    )
+      throw new Error("Payment reference must be up to 250 characters.");
     const receipt = validateReceipt(input.receipt);
     const order = {
       id: input.id,
@@ -574,12 +580,7 @@ export function createStore(path = ":memory:") {
       storeName: config.storeName,
       paymentMethod: input.paymentMethod,
       cardLast4: input.paymentMethod === "debit" ? input.cardLast4 : null,
-      reference:
-        input.paymentMethod === "ewallet"
-          ? String(input.reference || "")
-              .trim()
-              .slice(0, 250)
-          : null,
+      reference: String(input.reference || "").trim() || null,
       receipt,
       cashTendered:
         input.paymentMethod === "cash" ? cents(input.cashTendered) / 100 : null,
